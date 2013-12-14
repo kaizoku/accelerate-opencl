@@ -222,7 +222,7 @@ seqexps :: [C.Exp] -> C.Exp
 seqexps = foldl1 seqe
 
 seqe :: C.Exp -> C.Exp -> C.Exp
-e1 `seqe` e2 = C.Seq e1 e2 Loc.noSrcLoc
+e1 `seqe` e2 = C.Seq e1 e2 $ Loc.SrcLoc Loc.NoLoc
 
 
 -- Embedded scalar computations

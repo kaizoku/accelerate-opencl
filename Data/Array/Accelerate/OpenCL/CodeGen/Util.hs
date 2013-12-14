@@ -13,6 +13,9 @@ import Data.Array.Accelerate.OpenCL.CodeGen.Monad
 
 data Direction = Forward | Backward
 
+noSrcLoc :: SrcLoc
+noSrcLoc = SrcLoc NoLoc
+
 -- Types
 ix :: Type
 ix = typename "Ix"
