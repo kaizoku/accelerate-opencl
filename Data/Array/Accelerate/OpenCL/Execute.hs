@@ -18,7 +18,7 @@ module Data.Array.Accelerate.OpenCL.Execute (
 
 ) where
 
-import Data.Record.Label
+import Data.Label
 
 -- friends
 import Data.Array.Accelerate.AST

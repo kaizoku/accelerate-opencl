@@ -43,7 +43,7 @@ Library
                       , symbol
                       , hopencl              == 0.2.*
                       , mtl                  == 2.0.*
-                      , fclabels             >= 0.9 && < 1.0
+                      , fclabels             >= 1.0
                       , bytestring
                       , zlib
                       , transformers         == 0.2.*

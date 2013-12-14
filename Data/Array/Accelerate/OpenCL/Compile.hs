@@ -44,7 +44,7 @@ import Control.Monad
 import Control.Concurrent                               (forkIO)
 import Control.Concurrent.MVar
 import Data.Maybe
-import Data.Record.Label
+import Data.Label
 --import Language.C
 import System.FilePath
 import System.Directory

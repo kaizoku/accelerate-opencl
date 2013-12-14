@@ -37,7 +37,7 @@ import Data.IORef
 import Data.Maybe
 import Data.List
 import Data.Typeable
-import Data.Record.Label
+import Data.Label
 import Control.Applicative
 import Control.Monad
 import Control.Monad.State.Strict                       (StateT(..))

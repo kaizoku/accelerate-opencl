@@ -37,7 +37,7 @@ import Data.Int
 import Data.Word
 import Data.Maybe
 import Data.Typeable
-import Data.Record.Label
+import Data.Label
 import Control.Monad
 import Control.Applicative
 import Control.Monad.IO.Class
