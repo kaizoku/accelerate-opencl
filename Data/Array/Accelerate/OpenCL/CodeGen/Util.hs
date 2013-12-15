@@ -72,7 +72,7 @@ ccall :: String -> [Exp] -> Exp
 ccall fn args = [cexp|$id:fn ($args:args)|]
 
 typename :: String -> Type
-typename var = Type (DeclSpec [] [] (Tnamed (Id var noSrcLoc) noSrcLoc) noSrcLoc) (DeclRoot noSrcLoc) noSrcLoc
+typename var = Type (DeclSpec [] [] (Tnamed (Id var noSrcLoc) [] noSrcLoc) noSrcLoc) (DeclRoot noSrcLoc) noSrcLoc
 
 param :: Type -> String -> Param
 param ty name = [cparam|$ty:ty $id:name|]
@@ -120,8 +120,8 @@ changeStorage stor (Type (DeclSpec storage quals typ l0) _ l1) =
   Type (DeclSpec storage (s : quals) typ l0) (DeclRoot noSrcLoc) l1
      where
        s = case stor of
-             Global -> TCLGlobal noSrcLoc
-             Local  -> TCLLocal noSrcLoc
+             Global -> TCLglobal noSrcLoc
+             Local  -> TCLlocal noSrcLoc
 changeStorage _ _ = error "Not a DeclSpec"
 
 mkTypedef :: Bool -> String -> Type -> Definition
