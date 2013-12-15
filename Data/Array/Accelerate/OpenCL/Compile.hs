@@ -182,10 +182,10 @@ prepareAcc iss rootAcc rootEnv = do
 
         -- Let bindings to a single computation
         --
-        Alet a b | Let _ _ <- unAcc a -> do
+        Alet a b | Alet _ _ <- unAcc a -> do
           (ExecAcc _ _ _ (Alet x' y'), env1) <- travA a aenv
           (b', env2 `Push` Right c)         <- travA b (env1 `Push` Right (R1 0))
-          return (node (Alet (node (Let x' (setref c y'))) b'), env2)
+          return (node (Alet (node (Alet x' (setref c y'))) b'), env2)
 
         Alet a b  -> do
           (a', env1)                <- travA a aenv
@@ -420,18 +420,14 @@ prepareAcc iss rootAcc rootEnv = do
           (e', env1, var1) <- travE e aenv vars
           return (PrimApp f e', env1, var1)
 
-        IndexScalar a e -> do
+        Index a e -> do
           (a', env1)       <- travA a aenv
           (e', env2, var2) <- travE e env1 vars
-          return (IndexScalar a' e', env2, bind a' `cons` var2)
+          return (Index a' e', env2, bind a' `cons` var2)
 
         Shape a         -> do
           (a', env1) <- travA a aenv
           return (Shape a', env1, bind a' `cons` vars)
-
-        Size a          -> do
-          (a', env1) <- travA a aenv
-          return (Size a', env1, bind a' `cons` vars)
 
 
     travT :: Tuple (OpenExp env aenv) t
@@ -458,7 +454,7 @@ prepareAcc iss rootAcc rootEnv = do
 
     -- Auxiliary
     --
-    scan :: OpenAcc aenv Segments -> OpenAcc aenv Segments
+    scan :: OpenAcc aenv (Segments Int) -> OpenAcc aenv (Segments Int)
     scan = OpenAcc . Scanl plus (Const ((),0))
 
     plus :: PreOpenFun OpenAcc () aenv (Int -> Int -> Int)

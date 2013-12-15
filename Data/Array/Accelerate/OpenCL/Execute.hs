@@ -387,7 +387,7 @@ foldSegOp :: Shape dim
           -> PreOpenAcc ExecOpenAcc aenv (Array (dim:.Int) e)
           -> Val aenv
           -> Array (dim:.Int) e
-          -> Segments
+          -> Segments Int
           -> CIO (Array (dim:.Int) e)
 foldSegOp c kernel bindings acc aenv (Array sh0 in0) (Array shs seg) = do
   res@(Array sh out) <- newArray c $ toElt (fst sh0, size shs-1)
