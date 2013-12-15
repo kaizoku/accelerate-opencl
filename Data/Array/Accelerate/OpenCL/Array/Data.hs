@@ -38,6 +38,7 @@ import Data.Word
 import Data.Maybe
 import Data.Typeable
 import Data.Label
+import Data.Label.Monadic   (gets, puts)
 import Control.Monad
 import Control.Applicative
 import Control.Monad.IO.Class
@@ -382,7 +383,7 @@ type instance DevicePtrs (a,b) = (DevicePtrs a, DevicePtrs b)
 -- |Increase the reference count of an array
 --
 touchArray :: AD.ArrayElt e => AD.ArrayData e -> Int -> CIO ()
-touchArray ad n = basicModify ad (mod refcount (fmap (+n)))
+touchArray ad n = basicModify ad (modify refcount (fmap (+n)))
 
 -- |Set an array to never be released by a call to 'freeArray'. When the
 -- array is unbound, its reference count is set to zero.
@@ -409,10 +410,10 @@ mallocArrayPrim :: forall a b e.
                 -> CIO ()
 mallocArrayPrim ad rc n =
   do let key = arrayToKey ad
-     tab <- getM memoryTable
+     tab <- gets memoryTable
      mem <- liftIO $ Hash.lookup tab key
      when (isNothing mem) $ do
-       ctx <- getM cl_context
+       ctx <- gets cl_context
        _ <- liftIO $
              Hash.update tab key . MemoryEntry rc =<< (OpenCL.mallocArray ctx [OpenCL.MemReadWrite] n :: IO (OpenCL.MemObject b))
        return ()
@@ -424,7 +425,7 @@ freeArrayPrim :: ( AD.ArrayElt e, AD.ArrayPtrs e ~ Ptr a, DevicePtrs e ~ OpenCL.
                  , Typeable a, Typeable b)
               => AD.ArrayData e     -- host array
               -> CIO ()
-freeArrayPrim ad = free . mod refcount (fmap (subtract 1)) =<< lookupArray ad
+freeArrayPrim ad = free . modify refcount (fmap (subtract 1)) =<< lookupArray ad
   where
     free v = case get refcount v of
       Nothing        -> return ()
@@ -470,7 +471,7 @@ peekArrayPrim :: ( AD.ArrayElt e, AD.ArrayPtrs e ~ Ptr a, DevicePtrs e ~ OpenCL.
 peekArrayPrim ad n =
   let dst = AD.ptrsOfArrayData ad
       src = arena ad
-  in do devices <- getM cl_devices
+  in do devices <- gets cl_devices
         let queue = snd . head $ devices
         lookupArray ad >>= \me -> liftIO $ OpenCL.peekArray queue 0 n (src me) dst
 
@@ -499,7 +500,7 @@ pokeArrayPrim :: ( AD.ArrayElt e, AD.ArrayPtrs e ~ Ptr a, DevicePtrs e ~ OpenCL.
 pokeArrayPrim ad n =
   let src      = AD.ptrsOfArrayData
       dst      = arena ad
-  in do devices <- getM cl_devices
+  in do devices <- gets cl_devices
         let queue = snd . head $ devices
         lookupArray ad >>= \v -> liftIO $ OpenCL.pokeArray queue 0 n (src ad) (dst v)
 
@@ -566,7 +567,7 @@ devicePtrsPrim :: ( AD.ArrayPtrs e ~ Ptr a, AD.ArrayElt e, Typeable a
                => AD.ArrayData e
                -> CIO (Maybe (DevicePtrs e))
 devicePtrsPrim ad = do
-  t <- getM memoryTable
+  t <- gets memoryTable
   x <- liftIO $ Hash.lookup t (arrayToKey ad)
   return (arena ad `fmap` x)
 
@@ -598,7 +599,7 @@ lookupArray :: (AD.ArrayElt e, AD.ArrayPtrs e ~ Ptr a, Typeable a)
             => AD.ArrayData e
             -> CIO MemoryEntry
 lookupArray ad = do
-  t <- getM memoryTable
+  t <- gets memoryTable
   x <- liftIO $ Hash.lookup t (arrayToKey ad)
   case x of
        Just e -> return e
@@ -612,7 +613,7 @@ updateArray :: (AD.ArrayPtrs e ~ Ptr a, Typeable a, AD.ArrayElt e)
             -> MemoryEntry
             -> CIO ()
 updateArray ad me = do
-  t <- getM memoryTable
+  t <- gets memoryTable
   liftIO $ Hash.update t (arrayToKey ad) me >> return ()
 
 -- Delete an entry from the state structure and release the corresponding device
@@ -624,7 +625,7 @@ deleteArray :: ( AD.ArrayElt e, AD.ArrayPtrs e ~ Ptr a, DevicePtrs e ~ OpenCL.Me
             -> CIO ()
 deleteArray ad = do
   let key = arrayToKey ad
-  tab <- getM memoryTable
+  tab <- gets memoryTable
   val <- liftIO $ Hash.lookup tab key
   case val of
        Just m -> liftIO $ OpenCL.free (arena ad m) >> Hash.delete tab key

@@ -111,8 +111,8 @@ newAccMemoryTable = Hash.new (==) hashAccArray
 refcount :: MemoryEntry :-> Maybe Int
 refcount = lens get set
   where
-    get   (MemoryEntry c _) = c
-    set c (MemoryEntry _ p) = MemoryEntry c p
+    get (MemoryEntry c _) = c
+    set f (MemoryEntry c o) = MemoryEntry (f c) o
 
 
 -- The state token for accelerated OpenCL array operations

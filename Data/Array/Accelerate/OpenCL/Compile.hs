@@ -45,6 +45,7 @@ import Control.Concurrent                               (forkIO)
 import Control.Concurrent.MVar
 import Data.Maybe
 import Data.Label
+import Data.Label.Monadic   (gets, puts)
 --import Language.C
 import System.FilePath
 import System.Directory
@@ -166,7 +167,7 @@ compileAfun1 _ =
 
 prepareAcc :: Bool -> OpenAcc aenv a -> Ref count -> CIO (ExecOpenAcc aenv a, Ref count)
 prepareAcc iss rootAcc rootEnv = do
-  setM memoryTable =<< liftIO newAccMemoryTable
+  puts memoryTable =<< liftIO newAccMemoryTable
   travA rootAcc rootEnv
   where
     -- Traverse an open array expression in depth-first order
@@ -519,7 +520,7 @@ build name acc fvar =
   let key = accToKey acc
   in do
     mvar   <- liftIO newEmptyMVar
-    table  <- getM kernelTable
+    table  <- gets kernelTable
     cached <- isJust `fmap` liftIO (Hash.lookup table key)
     unless cached $ compile table key acc fvar
     return . (name,) . liftIO $ memo mvar (link table key)
@@ -560,8 +561,8 @@ link table key =
 compile :: KernelTable -> AccKey -> OpenAcc aenv a -> [AccBinding aenv] -> CIO ()
 compile table key acc fvar = do
   mvar <- liftIO newEmptyMVar
-  ctx <- getM cl_context
-  devices <- getM cl_devices
+  ctx <- gets cl_context
+  devices <- gets cl_devices
 
   -- Compile in another thread
   _ <- liftIO . forkIO $ do
