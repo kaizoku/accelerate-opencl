@@ -112,18 +112,9 @@ executeOpenAcc (ExecAcc count kernel bindings acc) aenv =
     --
     Avar ix  -> return (prj ix aenv)
 
-    Let  a b -> do
+    Alet a b -> do
       a0 <- executeOpenAcc a aenv
       executeOpenAcc b (aenv `Push` a0) <* applyArraysR deleteArray arrays a0
-
-    Let2 a b -> do
-      (a1, a0) <- executeOpenAcc a aenv
-      executeOpenAcc b (aenv `Push` a1 `Push` a0) -- <* applyArraysR deleteArray arrays a0
-                                                  -- <* applyArraysR deleteArray arrays a1
-
-    PairArrays a b ->
-      (,) <$> executeOpenAcc a aenv
-          <*> executeOpenAcc b aenv
 
     Apply (Alam (Abody f)) a -> do
       a0 <- executeOpenAcc a aenv
@@ -154,7 +145,7 @@ executeOpenAcc (ExecAcc count kernel bindings acc) aenv =
       a0   <- executeOpenAcc a aenv
       replicateOp c kernel bindings acc aenv sliceIndex slix a0
 
-    Index sliceIndex a e -> do
+    Slice sliceIndex a e -> do
       slix <- executeExp e aenv
       a0   <- executeOpenAcc a aenv
       indexOp c kernel bindings acc aenv sliceIndex a0 slix

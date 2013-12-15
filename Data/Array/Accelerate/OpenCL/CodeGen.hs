@@ -87,12 +87,10 @@ codeGenAcc acc vars =
       case pacc of
         -- non-computation forms
         --
-        Let _ _           -> internalError
-        Let2 _ _          -> internalError
+        Alet _ _           -> internalError
         Avar _            -> internalError
         Apply _ _         -> internalError
         Acond _ _ _       -> internalError
-        PairArrays _ _    -> internalError
         Use _             -> internalError
         Unit _            -> internalError
         Reshape _ _       -> internalError
@@ -125,7 +123,7 @@ codeGenAcc acc vars =
           in
           mkReplicate (codeGenAccType a) dimSl dimOut . seqexps . reverse $ extend sl 0
 
-        Index sl a slix   ->
+        Slice sl a slix   ->
           let dimCo  = length (codeGenExpType slix)
               dimSl  = accDim acc
               dimIn0 = accDim a
@@ -135,7 +133,7 @@ codeGenAcc acc vars =
               restrict (SliceAll   sliceIdx) (m,n) = mkPrj dimSl "sl" n : restrict sliceIdx (m,n+1)
               restrict (SliceFixed sliceIdx) (m,n) = mkPrj dimCo "co" m : restrict sliceIdx (m+1,n)
           in
-          mkIndex (codeGenAccType a) dimSl dimCo dimIn0 . seqexps . reverse $ restrict sl (0,0)
+          mkSlice (codeGenAccType a) dimSl dimCo dimIn0 . seqexps . reverse $ restrict sl (0,0)
 
 --         -- Stencil f bndy a     ->
 --         --   let ty0   = codeGenTupleTex (accType a)
@@ -278,7 +276,6 @@ codeGenExp (Cond p t e) =
   in
   zipWith branch (codeGenExp t) (codeGenExp e)
 
-codeGenExp (Size a)         = return $ ccall "size" (codeGenExp (Shape a))
 codeGenExp (Shape a)
   | OpenAcc (Avar var) <- a = return $ cvar ("sh" ++ idxToString var)
   | otherwise               = INTERNAL_ERROR(error) "codeGenExp" "expected array variable"

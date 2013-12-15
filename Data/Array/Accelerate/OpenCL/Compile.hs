@@ -179,57 +179,17 @@ prepareAcc iss rootAcc rootEnv = do
         --
         Avar ix -> return (node (Avar ix), incIdx ix aenv)
 
-        -- Let bindings to computations that yield two arrays
-        --
-        Let2 a b | Avar ia <- unAcc a
-                 , Avar ib <- unAcc b ->
-          let a'   = node (Avar ia)
-              b'   = node (Avar ib)
-              env' = modIdx (eitherIx ib incSucc incZero) ia aenv
-          in
-          return (node (Let2 a' b'), env')
-
-        Let2 a b | Avar ix <- unAcc a ->
-          let a' = node (Avar ix)
-          in do
-          (b', env1 `Push` _ `Push` _) <- travA b (aenv `Push` Left (IRef ix incSucc)
-                                                        `Push` Left (IRef ix incZero))
-          return (node (Let2 a' b'), env1)
-
-        Let2 a b -> do
-          (a', env1)                      <- travA a aenv
-          (b', env2 `Push` Right (R1 c1)
-                    `Push` Right (R1 c0)) <- travA b (env1 `Push` Right (R1 0) `Push` Right (R1 0))
-          return (node (Let2 (setref (R2 c1 c0) a') b'), env2)
-
         -- Let bindings to a single computation
         --
-        Let a b | Let2 x y <- unAcc a
-                , Avar u   <- unAcc x
-                , Avar v   <- unAcc y ->
-          let a' = node (Let2 (node (Avar u)) (node (Avar v)))
-              rc = Left (IRef u (eitherIx v incSucc incZero))
-          in do
-          (b', env1 `Push` _) <- travA b (aenv `Push` rc)
-          return (node (Let a' b'), env1)
-
-        Let a b | Let2 _ y <- unAcc a
-                , Avar v   <- unAcc y -> do
-          (ExecAcc _ _ _ (Let2 x' y'), env1) <- travA a aenv
-          (b', env2 `Push` Right (R1 c))     <- travA b (env1 `Push` Right (R1 0))
-          --
-          let a' = node (Let2 (setref (eitherIx v (R2 c 0) (R2 0 c)) x') y')
-          return  (node (Let a' b'), env2)
-
-        Let a b | Let _ _ <- unAcc a -> do
-          (ExecAcc _ _ _ (Let x' y'), env1) <- travA a aenv
+        Alet a b | Let _ _ <- unAcc a -> do
+          (ExecAcc _ _ _ (Alet x' y'), env1) <- travA a aenv
           (b', env2 `Push` Right c)         <- travA b (env1 `Push` Right (R1 0))
-          return (node (Let (node (Let x' (setref c y'))) b'), env2)
+          return (node (Alet (node (Let x' (setref c y'))) b'), env2)
 
-        Let a b  -> do
+        Alet a b  -> do
           (a', env1)                <- travA a aenv
           (b', env2 `Push` Right c) <- travA b (env1 `Push` Right rc)
-          return (node (Let (setref c a') b'), env2)
+          return (node (Alet (setref c a') b'), env2)
           where
             rc | isAcc2 a  = R2 0 0
                | otherwise = R1 0
@@ -240,11 +200,6 @@ prepareAcc iss rootAcc rootEnv = do
           (b', env2 `Push` Right c) <- travA b (env1 `Push` Right (R1 0))
           return (node (Apply (Alam (Abody b')) (setref c a')), env2)
         Apply _                _ -> error "I made you a cookie, but I eated it"
-
-        PairArrays arr1 arr2 -> do
-          (arr1', env1) <- travA arr1 aenv
-          (arr2', env2) <- travA arr2 env1
-          return (node (PairArrays arr1' arr2'), env2)
 
         Acond c t e -> do
           (c', env1, _) <- travE c aenv []
@@ -288,11 +243,11 @@ prepareAcc iss rootAcc rootEnv = do
           kernel        <- build "replicate" acc []
           return (ExecAcc singleRef kernel [] (Replicate slix e' a'), env2)
 
-        Index slix a e -> do
+        Slice slix a e -> do
           (a', env1)    <- travA a aenv
           (e', env2, _) <- travE e env1 []
           kernel        <- build "slice" acc []
-          return (ExecAcc singleRef kernel [] (Index slix a' e'), env2)
+          return (ExecAcc singleRef kernel [] (Slice slix a' e'), env2)
 
         Map f a -> do
           (f', env1, var1) <- travF f aenv []
@@ -670,10 +625,8 @@ compileFlags = do
 --           ann  = braces (usecount rc <> comma <+> freevars fv)
 --       in case pacc of
 --            Avar _         -> base
---            Let  _ _       -> base
---            Let2 _ _       -> base
+--            Alet  _ _       -> base
 --            Apply _ _      -> base
---            PairArrays _ _ -> base
 --            Acond _ _ _    -> base
 --            _              -> ann <+> base
 --   where

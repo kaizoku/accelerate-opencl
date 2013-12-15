@@ -19,7 +19,7 @@ module Data.Array.Accelerate.OpenCL.CodeGen.Skeleton
     mkMap, mkZipWith,
 --    mkStencil, mkStencil2,
 --    mkScanl, mkScanr, mkScanl', mkScanr', mkScanl1, mkScanr1,
-    mkPermute, mkBackpermute, mkReplicate, mkIndex
+    mkPermute, mkBackpermute, mkReplicate, mkSlice
   )
   where
 
@@ -283,8 +283,8 @@ mkBackpermute ty dimOut dimInA indexFn = runCGM $ do
 -- Multidimensional Index and Replicate
 -- ------------------------------------
 
-mkIndex :: [C.Type] -> Int -> Int -> Int -> C.Exp -> CUTranslSkel
-mkIndex ty dimSl dimCo dimInA slix = runCGM $ do
+mkSlice :: [C.Type] -> Int -> Int -> Int -> C.Exp -> CUTranslSkel
+mkSlice ty dimSl dimCo dimInA slix = runCGM $ do
     (d_out, d_inA : _) <- mkTupleTypeAsc 1 ty
     mkDim "Slice" dimSl
     mkDim "SliceDim" dimCo

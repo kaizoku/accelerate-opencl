@@ -65,7 +65,7 @@ showAcc acc@(OpenAcc pacc) =
   case pacc of
     Generate e f       -> chr   1 : showExp e ++ showFun f
     Replicate s e a    -> chr   3 : showTy (accType a) ++ showExp e ++ showSI s e a acc
-    Index s a e        -> chr   5 : showTy (accType a) ++ showExp e ++ showSI s e acc a
+    Slice s a e        -> chr   5 : showTy (accType a) ++ showExp e ++ showSI s e acc a
     Map f a            -> chr   7 : showTy (accType a) ++ showFun f
     ZipWith f x y      -> chr  11 : showTy (accType x) ++ showTy (accType y) ++ showFun f
     Fold f e a         -> chr  13 : chr (accDim a) : showTy (accType a) ++ showFun f ++ showExp e
