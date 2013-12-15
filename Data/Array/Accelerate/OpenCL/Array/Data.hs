@@ -382,17 +382,17 @@ type instance DevicePtrs (a,b) = (DevicePtrs a, DevicePtrs b)
 -- |Increase the reference count of an array
 --
 touchArray :: AD.ArrayElt e => AD.ArrayData e -> Int -> CIO ()
-touchArray ad n = basicModify ad (modL refcount (fmap (+n)))
+touchArray ad n = basicModify ad (mod refcount (fmap (+n)))
 
 -- |Set an array to never be released by a call to 'freeArray'. When the
 -- array is unbound, its reference count is set to zero.
 --
 bindArray :: AD.ArrayElt e => AD.ArrayData e -> CIO ()
-bindArray ad = basicModify ad (setL refcount Nothing)
+bindArray ad = basicModify ad (set refcount Nothing)
 
 -- |Unset an array to never be released by a call to 'freeArray'.
 unbindArray :: AD.ArrayElt e => AD.ArrayData e -> CIO ()
-unbindArray ad = basicModify ad (setL refcount (Just 0))
+unbindArray ad = basicModify ad (set refcount (Just 0))
 
 
 -- ArrayElt Implementation
@@ -424,9 +424,9 @@ freeArrayPrim :: ( AD.ArrayElt e, AD.ArrayPtrs e ~ Ptr a, DevicePtrs e ~ OpenCL.
                  , Typeable a, Typeable b)
               => AD.ArrayData e     -- host array
               -> CIO ()
-freeArrayPrim ad = free . modL refcount (fmap (subtract 1)) =<< lookupArray ad
+freeArrayPrim ad = free . mod refcount (fmap (subtract 1)) =<< lookupArray ad
   where
-    free v = case getL refcount v of
+    free v = case get refcount v of
       Nothing        -> return ()
       Just x | x > 0 -> updateArray ad v
       _              -> deleteArray ad

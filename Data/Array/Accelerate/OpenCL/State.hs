@@ -220,9 +220,9 @@ runOpenCLWith state acc = do
     --
     sanitise :: OpenCLState -> IO OpenCLState
     sanitise st = do
-      entries <- filter (isJust . getL refcount . snd) <$> Hash.toList (getL memoryTable st)
+      entries <- filter (isJust . get refcount . snd) <$> Hash.toList (get memoryTable st)
       INTERNAL_ASSERT "runOpenCL.sanitise" (null entries)
-        $ return (setL memoryTable undefined st)
+        $ return (set memoryTable undefined st)
 
 
 -- Nasty global statesses
